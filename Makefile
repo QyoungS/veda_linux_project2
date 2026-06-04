@@ -1,13 +1,48 @@
-.PHONY: all server client clean
+CC = gcc
+CFLAGS = -Wall -g -Icode/server/include
+LDFLAGS = -ldl -lpthread
+LIB_LDFLAGS = -lwiringPi -lpthread
 
-all: server
+EXEC_DIR = exec
+EXEC_LIB_DIR = $(EXEC_DIR)/lib
+SERVER = $(EXEC_DIR)/server
+CLIENT = $(EXEC_DIR)/client
+LIBLED = $(EXEC_LIB_DIR)/libled.so
+LIBBUZZER = $(EXEC_LIB_DIR)/libbuzzer.so
+LIBLIGHT = $(EXEC_LIB_DIR)/liblight.so
+LIBFND = $(EXEC_LIB_DIR)/libfnd.so
+LIBS = $(LIBLED) $(LIBBUZZER) $(LIBLIGHT) $(LIBFND)
 
-server:
-	$(MAKE) -C code/server
+SERVER_SRCS = code/server/src/server.c code/server/src/daemon.c
+CLIENT_SRCS = code/client/client.c
 
-client:
-	$(MAKE) -C code/client
+all: $(SERVER) $(CLIENT)
+
+$(EXEC_DIR):
+	mkdir -p $(EXEC_DIR)
+
+$(EXEC_LIB_DIR): | $(EXEC_DIR)
+	mkdir -p $(EXEC_LIB_DIR)
+
+$(LIBLED): | $(EXEC_LIB_DIR)
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLED) code/server/lib/led.c $(LIB_LDFLAGS)
+
+$(LIBBUZZER): | $(EXEC_LIB_DIR)
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBBUZZER) code/server/lib/buzzer.c $(LIB_LDFLAGS)
+
+$(LIBLIGHT): | $(EXEC_LIB_DIR)
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLIGHT) code/server/lib/light.c $(LIB_LDFLAGS)
+
+$(LIBFND): | $(EXEC_LIB_DIR)
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBFND) code/server/lib/fnd.c $(LIB_LDFLAGS)
+
+$(SERVER): $(SERVER_SRCS) $(LIBS) | $(EXEC_DIR)
+	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_SRCS) $(LDFLAGS)
+
+$(CLIENT): $(CLIENT_SRCS) | $(EXEC_DIR)
+	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENT_SRCS)
 
 clean:
-	$(MAKE) -C code/server clean
-	$(MAKE) -C code/client clean
+	rm -f $(SERVER) $(CLIENT) $(LIBS)
+	rmdir --ignore-fail-on-non-empty $(EXEC_LIB_DIR) 2>/dev/null || true
+	rmdir --ignore-fail-on-non-empty $(EXEC_DIR) 2>/dev/null || true
