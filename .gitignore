@@ -1,0 +1,10 @@
+# Ignore build artifacts in code/server
+code/server/server
+code/server/lib/*.so
+
+# Ignore runtime log
+running.txt
+
+# Ignore temporary Vim swap files
+*~
+*.swp

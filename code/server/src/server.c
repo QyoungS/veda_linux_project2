@@ -9,7 +9,10 @@
 #include <pthread.h>
 
 #define TCP_PORT 5100
-#define LIB_PATH "./lib/libdevice.so"
+#define LED_LIB_PATH "./lib/libled.so"
+#define BUZZER_LIB_PATH "./lib/libbuzzer.so"
+#define LIGHT_LIB_PATH "./lib/liblight.so"
+#define FND_LIB_PATH "./lib/libfnd.so"
 
 int make_daemon(void);
 
@@ -61,7 +64,10 @@ int main(int argc, char **argv)
     socklen_t clen;
     char mesg[BUFSIZ];
 
-    void *handle;
+    void *led_handle;
+    void *buzzer_handle;
+    void *light_handle;
+    void *fnd_handle;
     func_void_t led_on;
     func_void_t led_off;
     func_void_t buzzer_on;
@@ -94,33 +100,63 @@ int main(int argc, char **argv)
         }
     }
 
-    /* Load device shared library at runtime */
-    handle = dlopen(LIB_PATH, RTLD_NOW);
-    if (!handle) {
+    /* Load device shared libraries at runtime */
+    led_handle = dlopen(LED_LIB_PATH, RTLD_NOW | RTLD_GLOBAL);
+    if (!led_handle) {
         fprintf(stderr, "dlopen error: %s\n", dlerror());
         return -1;
     }
 
-    /* Load device control functions from shared library */
-    led_on = (func_void_t)dlsym(handle, "led_on");
-    led_off = (func_void_t)dlsym(handle, "led_off");
-    led_brightness = (func_int_t)dlsym(handle, "led_brightness");
-    buzzer_on = (func_void_t)dlsym(handle, "buzzer_on");
-    buzzer_off = (func_void_t)dlsym(handle, "buzzer_off");
-    light_read = (func_void_t)dlsym(handle, "light_read");
-    fnd_display = (func_int_t)dlsym(handle, "fnd_display");
+    buzzer_handle = dlopen(BUZZER_LIB_PATH, RTLD_NOW);
+    if (!buzzer_handle) {
+        fprintf(stderr, "dlopen error: %s\n", dlerror());
+        dlclose(led_handle);
+        return -1;
+    }
+
+    light_handle = dlopen(LIGHT_LIB_PATH, RTLD_NOW);
+    if (!light_handle) {
+        fprintf(stderr, "dlopen error: %s\n", dlerror());
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
+        return -1;
+    }
+
+    fnd_handle = dlopen(FND_LIB_PATH, RTLD_NOW);
+    if (!fnd_handle) {
+        fprintf(stderr, "dlopen error: %s\n", dlerror());
+        dlclose(light_handle);
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
+        return -1;
+    }
+
+    /* Load device control functions from shared libraries */
+    led_on = (func_void_t)dlsym(led_handle, "led_on");
+    led_off = (func_void_t)dlsym(led_handle, "led_off");
+    led_brightness = (func_int_t)dlsym(led_handle, "led_brightness");
+    buzzer_on = (func_void_t)dlsym(buzzer_handle, "buzzer_on");
+    buzzer_off = (func_void_t)dlsym(buzzer_handle, "buzzer_off");
+    light_read = (func_void_t)dlsym(light_handle, "light_read");
+    fnd_display = (func_int_t)dlsym(fnd_handle, "fnd_display");
 
     if (!led_on || !led_off || !led_brightness || !buzzer_on ||
         !buzzer_off || !light_read || !fnd_display) {
         fprintf(stderr, "dlsym error: %s\n", dlerror());
-        dlclose(handle);
+        dlclose(fnd_handle);
+        dlclose(light_handle);
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
         return -1;
     }
 
     /* Create TCP server socket */
     if ((ssock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
         perror("socket()");
-        dlclose(handle);
+        dlclose(fnd_handle);
+        dlclose(light_handle);
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
         return -1;
     }
 
@@ -130,7 +166,10 @@ int main(int argc, char **argv)
                        &optval, sizeof(optval)) < 0) {
             perror("setsockopt()");
             close(ssock);
-            dlclose(handle);
+            dlclose(fnd_handle);
+            dlclose(light_handle);
+            dlclose(buzzer_handle);
+            dlclose(led_handle);
             return -1;
         }
     }
@@ -144,7 +183,10 @@ int main(int argc, char **argv)
     if (bind(ssock, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
         perror("bind()");
         close(ssock);
-        dlclose(handle);
+        dlclose(fnd_handle);
+        dlclose(light_handle);
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
         return -1;
     }
 
@@ -152,7 +194,10 @@ int main(int argc, char **argv)
     if (listen(ssock, 8) < 0) {
         perror("listen()");
         close(ssock);
-        dlclose(handle);
+        dlclose(fnd_handle);
+        dlclose(light_handle);
+        dlclose(buzzer_handle);
+        dlclose(led_handle);
         return -1;
     }
 
@@ -306,7 +351,10 @@ int main(int argc, char **argv)
     }
 
     close(ssock);
-    dlclose(handle);
+    dlclose(fnd_handle);
+    dlclose(light_handle);
+    dlclose(buzzer_handle);
+    dlclose(led_handle);
 
     return 0;
 }

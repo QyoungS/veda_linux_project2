@@ -5,23 +5,38 @@ LIB_LDFLAGS = -lwiringPi -lpthread
 
 SERVER = server
 LIBDIR = lib
-LIB = $(LIBDIR)/libdevice.so
+LIBLED = $(LIBDIR)/libled.so
+LIBBUZZER = $(LIBDIR)/libbuzzer.so
+LIBLIGHT = $(LIBDIR)/liblight.so
+LIBFND = $(LIBDIR)/libfnd.so
+LIBS = $(LIBLED) $(LIBBUZZER) $(LIBLIGHT) $(LIBFND)
 
 SERVER_SRCS = src/server.c src/daemon.c
-DEVICE_SRCS = lib/led.c lib/buzzer.c lib/light.c lib/fnd.c
 
-all: $(LIB) $(SERVER)
+all: $(LIBS) $(SERVER)
 
-$(LIB): $(DEVICE_SRCS) include/device.h
-	$(CC) $(CFLAGS) -fPIC -shared -o $(LIB) $(DEVICE_SRCS) $(LIB_LDFLAGS)
+$(LIBLED): lib/led.c include/device.h
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLED) lib/led.c $(LIB_LDFLAGS)
 
-$(SERVER): $(SERVER_SRCS) $(LIB)
+$(LIBBUZZER): lib/buzzer.c include/device.h
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBBUZZER) lib/buzzer.c $(LIB_LDFLAGS)
+
+$(LIBLIGHT): lib/light.c include/device.h
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLIGHT) lib/light.c $(LIB_LDFLAGS)
+
+$(LIBFND): lib/fnd.c include/device.h
+	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBFND) lib/fnd.c $(LIB_LDFLAGS)
+
+$(SERVER): $(SERVER_SRCS) $(LIBS)
 	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_SRCS) $(LDFLAGS)
 
 install: all
 	mkdir -p ../../exec/lib
 	cp $(SERVER) ../../exec/
-	cp $(LIB) ../../exec/lib/
+	cp $(LIBLED) ../../exec/lib/
+	cp $(LIBBUZZER) ../../exec/lib/
+	cp $(LIBLIGHT) ../../exec/lib/
+	cp $(LIBFND) ../../exec/lib/
 
 clean:
-	rm -f $(SERVER) $(LIB)
+	rm -f $(SERVER) $(LIBS)
