@@ -6,6 +6,7 @@
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -343,11 +344,12 @@ int main(int argc, char **argv)
 	{
 		const char *log_paths[] = {
 			"../docs/running.txt",
-			"docs/running.txt",
-			"running.txt"
+			"docs/running.txt"
 		};
 		size_t i;
 
+		mkdir("../docs", 0777);
+		mkdir("docs", 0777);
 		for (i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
 			log_file = fopen(log_paths[i], "a");
 			if (log_file != NULL) {
@@ -356,7 +358,7 @@ int main(int argc, char **argv)
 		}
 	}
 	if (log_file == NULL) {
-		perror("running.txt");
+		perror("docs/running.txt");
 	}
 	write_log("Client started");
 

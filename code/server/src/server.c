@@ -6,6 +6,7 @@
 #include <dlfcn.h>
 #include <time.h>
 #include <errno.h>
+#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <pthread.h>
@@ -309,11 +310,12 @@ int main(int argc, char **argv)
     {
         const char *log_paths[] = {
             "../docs/running.txt",
-            "docs/running.txt",
-            "running.txt"
+            "docs/running.txt"
         };
         FILE *logf = NULL;
 
+        mkdir("../docs", 0777);
+        mkdir("docs", 0777);
         for (size_t i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
             logf = fopen(log_paths[i], "a");
             if (logf) {
@@ -328,7 +330,7 @@ int main(int argc, char **argv)
             /* keep unbuffered for immediate logging */
             setvbuf(stdout, NULL, _IONBF, 0);
         } else {
-            SERVER_PERROR("fopen(running.txt)");
+            SERVER_PERROR("fopen(docs/running.txt)");
         }
     }
 

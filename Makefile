@@ -28,6 +28,7 @@ client: $(CLIENT)
 web: $(WEB)
 
 reset-log:
+	mkdir -p docs
 	: > $(RUNNING_LOG)
 
 $(EXEC_DIR):
