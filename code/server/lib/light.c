@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <wiringPi.h>
-#include "device.h"
+#include "light.h"
+#include "led.h"
 #include "device_log.h"
 
 #define LIGHT_PIN 11

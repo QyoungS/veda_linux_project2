@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <wiringPi.h>
-#include "device.h"
+#include "fnd.h"
 #include "device_log.h"
 
 #define FND_A 23

@@ -2,7 +2,7 @@
 #include <pthread.h>
 #include <wiringPi.h>
 #include <softTone.h>
-#include "device.h"
+#include "buzzer.h"
 #include "device_log.h"
 
 /* Change only these pin numbers */

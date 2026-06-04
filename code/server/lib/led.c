@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <wiringPi.h>
 #include <softPwm.h>
-#include "device.h"
+#include "led.h"
 #include "device_log.h"
 
 /* Change only these pin numbers */
