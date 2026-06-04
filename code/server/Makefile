@@ -13,7 +13,7 @@ LIBS = $(LIBLED) $(LIBBUZZER) $(LIBLIGHT) $(LIBFND)
 
 SERVER_SRCS = src/server.c src/daemon.c
 
-all: $(LIBS) $(SERVER)
+all: install
 
 $(LIBLED): lib/led.c include/led.h
 	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLED) lib/led.c $(LIB_LDFLAGS)
@@ -30,13 +30,13 @@ $(LIBFND): lib/fnd.c include/fnd.h
 $(SERVER): $(SERVER_SRCS) $(LIBS)
 	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_SRCS) $(LDFLAGS)
 
-install: all
+install: $(LIBS) $(SERVER)
 	mkdir -p ../../exec/lib
-	cp $(SERVER) ../../exec/
-	cp $(LIBLED) ../../exec/lib/
-	cp $(LIBBUZZER) ../../exec/lib/
-	cp $(LIBLIGHT) ../../exec/lib/
-	cp $(LIBFND) ../../exec/lib/
+	mv $(SERVER) ../../exec/
+	mv $(LIBLED) ../../exec/lib/
+	mv $(LIBBUZZER) ../../exec/lib/
+	mv $(LIBLIGHT) ../../exec/lib/
+	mv $(LIBFND) ../../exec/lib/
 
 clean:
 	rm -f $(SERVER) $(LIBS)
