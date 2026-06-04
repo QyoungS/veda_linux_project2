@@ -18,5 +18,10 @@ $(LIB): $(DEVICE_SRCS) include/device.h
 $(SERVER): $(SERVER_SRCS) $(LIB)
 	$(CC) $(CFLAGS) -o $(SERVER) $(SERVER_SRCS) $(LDFLAGS)
 
+install: all
+	mkdir -p ../../exec/lib
+	cp $(SERVER) ../../exec/
+	cp $(LIB) ../../exec/lib/
+
 clean:
 	rm -f $(SERVER) $(LIB)
