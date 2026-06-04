@@ -3,7 +3,6 @@
 #include <wiringPi.h>
 #include <softTone.h>
 #include "buzzer.h"
-#include "device_log.h"
 
 /* Change only these pin numbers */
 #define BUZZER_PIN  21
@@ -46,8 +45,6 @@ static void buzzer_init(void)
         return;
     }
 
-    DEVICE_LOG("[device] BUZZER init: pin=%d freq=%d\n", BUZZER_PIN, BUZZER_FREQ);
-
     wiringPiSetupGpio();
 
     pinMode(BUZZER_PIN, OUTPUT);
@@ -63,8 +60,6 @@ static void *buzzer_play_thread(void *arg)
     int total = sizeof(healing_chime) / sizeof(healing_chime[0]);
 
     (void)arg;
-
-    DEVICE_LOG("[device] BUZZER play: healing chime\n");
 
     for (int i = 0; i < total; i++) {
         if (buzzer_should_stop()) {
@@ -88,22 +83,17 @@ static void *buzzer_play_thread(void *arg)
     stop_requested = 0;
     pthread_mutex_unlock(&buzzer_lock);
 
-    DEVICE_LOG("[device] BUZZER melody stopped\n");
-
     return NULL;
 }
 
 int buzzer_on(void)
 {
-    DEVICE_LOG("[device] BUZZER command: on\n");
-
     buzzer_init();
 
     pthread_mutex_lock(&buzzer_lock);
     if (playing) {
         stop_requested = 1;
         pthread_mutex_unlock(&buzzer_lock);
-        DEVICE_LOG("[device] BUZZER already playing\n");
         return 0;
     }
 
@@ -115,20 +105,16 @@ int buzzer_on(void)
         pthread_mutex_lock(&buzzer_lock);
         playing = 0;
         pthread_mutex_unlock(&buzzer_lock);
-        DEVICE_LOG("[device] BUZZER thread create failed\n");
         return -1;
     }
 
     pthread_detach(play_thread);
-    DEVICE_LOG("[device] BUZZER melody started\n");
 
     return 0;
 }
 
 int buzzer_off(void)
 {
-    DEVICE_LOG("[device] BUZZER command: off\n");
-
     buzzer_init();
 
     pthread_mutex_lock(&buzzer_lock);
@@ -136,7 +122,6 @@ int buzzer_off(void)
     pthread_mutex_unlock(&buzzer_lock);
 
     buzzer_stop_output();
-    DEVICE_LOG("[device] BUZZER OFF\n");
 
     return 0;
 }

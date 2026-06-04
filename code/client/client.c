@@ -69,8 +69,8 @@ static void print_menu(void)
 	printf("3. Set Brightness\n");
 	printf("4. BUZZER ON (play melody)\n");
 	printf("5. BUZZER OFF (stop)\n");
-	printf("6. SENSOR ON\n");
-	printf("7. SENSOR OFF\n");
+	printf("6. LIGHT SENSOR ON\n");
+	printf("7. LIGHT SENSOR OFF\n");
 	printf("8. SEGMENT DISPLAY\n");
 	printf("9. SEGMENT STOP\n");
 	printf("10. Exit\n");
@@ -199,7 +199,8 @@ static int send_command_result(int sock, const char *cmd, int print_result)
 	if (print_result && recv_len > 0) {
 		recvbuf[recv_len] = '\0';
 		write_log("Received response: %s", recvbuf);
-		if (strcmp(cmd, "light read") == 0) {
+		if (strcmp(cmd, "light read") == 0 ||
+		    strcmp(cmd, "sensor off") == 0) {
 			printf("[Sensor] %s", recvbuf);
 		} else {
 			printf("%s", recvbuf);
@@ -226,7 +227,7 @@ static int send_command_silent(int sock, const char *cmd)
 static int read_sensor_once(int sock)
 {
 	char recvbuf[BUF_SIZE];
-	char *message;
+	char *line;
 	ssize_t recv_len;
 
 	if (send(sock, "light read", strlen("light read"), 0) < 0) {
@@ -247,19 +248,18 @@ static int read_sensor_once(int sock)
 
 	recvbuf[recv_len] = '\0';
 	write_log("Received response: %s", recvbuf);
-	message = recvbuf;
-
-	if (strncmp(message, "Result: ", 8) == 0) {
-		message += 8;
+	line = strtok(recvbuf, "\r\n");
+	while (line != NULL) {
+		if (strncmp(line, "Result: LIGHT ", 14) == 0) {
+			printf("[Sensor] %s\n", line + 8);
+			write_log("[Sensor] %s", line + 8);
+		} else {
+			printf("[Sensor] %s\n", line);
+			write_log("[Sensor] %s", line);
+		}
+		line = strtok(NULL, "\r\n");
 	}
-
-	message[strcspn(message, "\r\n")] = '\0';
-
-	printf("\n[Sensor] Result: SENSOR ON\n\n\n");
-	printf("[Sensor] %s\n", message);
 	fflush(stdout);
-	write_log("[Sensor] Result: SENSOR ON");
-	write_log("[Sensor] %s", message);
 
 	return 0;
 }

@@ -2,7 +2,6 @@
 #include <wiringPi.h>
 #include <softPwm.h>
 #include "led.h"
-#include "device_log.h"
 
 /* Change only these pin numbers */
 #define LED_PIN      12
@@ -27,8 +26,6 @@ static void led_init(void)
         return;
     }
 
-    DEVICE_LOG("[device] LED init: pin=%d pwm_range=%d\n", LED_PIN, PWM_RANGE);
-
     wiringPiSetupGpio();
 
     pinMode(LED_PIN, OUTPUT);
@@ -39,8 +36,6 @@ static void led_init(void)
 
 int led_on(void)
 {
-    DEVICE_LOG("[device] LED command: on\n");
-
     led_init();
 
     if (pwm_ready) {
@@ -48,15 +43,11 @@ int led_on(void)
     } else {
         digitalWrite(LED_PIN, LED_ACTIVE_LOW ? LOW : HIGH);
     }
-    DEVICE_LOG("[device] LED ON\n");
-
     return 0;
 }
 
 int led_off(void)
 {
-    DEVICE_LOG("[device] LED command: off\n");
-
     led_init();
 
     if (pwm_ready) {
@@ -64,17 +55,11 @@ int led_off(void)
     } else {
         digitalWrite(LED_PIN, LED_ACTIVE_LOW ? HIGH : LOW);
     }
-    DEVICE_LOG("[device] LED OFF\n");
-
     return 0;
 }
 
 int led_brightness(int value)
 {
-    int requested = value;
-
-    DEVICE_LOG("[device] LED command: brightness=%d\n", value);
-
     led_init();
 
     if (value < 0) {
@@ -85,18 +70,12 @@ int led_brightness(int value)
         value = PWM_RANGE;
     }
 
-    if (value != requested) {
-        DEVICE_LOG("[device] LED brightness adjusted: %d -> %d\n", requested, value);
-    }
-
     if (!pwm_ready) {
-        DEVICE_LOG("[device] LED PWM init: pin=%d range=%d\n", LED_PIN, PWM_RANGE);
         softPwmCreate(LED_PIN, led_pwm_value(0), PWM_RANGE);
         pwm_ready = 1;
     }
 
     softPwmWrite(LED_PIN, led_pwm_value(value));
-    DEVICE_LOG("[device] LED brightness: %d\n", value);
 
     return 0;
 }

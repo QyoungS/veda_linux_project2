@@ -37,16 +37,16 @@ $(EXEC_DIR):
 $(EXEC_LIB_DIR): | $(EXEC_DIR)
 	mkdir -p $(EXEC_LIB_DIR)
 
-$(LIBLED): code/server/lib/led.c code/server/include/led.h code/server/include/device_log.h | $(EXEC_LIB_DIR)
+$(LIBLED): code/server/lib/led.c code/server/include/led.h | $(EXEC_LIB_DIR)
 	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLED) code/server/lib/led.c $(LIB_LDFLAGS)
 
-$(LIBBUZZER): code/server/lib/buzzer.c code/server/include/buzzer.h code/server/include/device_log.h | $(EXEC_LIB_DIR)
+$(LIBBUZZER): code/server/lib/buzzer.c code/server/include/buzzer.h | $(EXEC_LIB_DIR)
 	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBBUZZER) code/server/lib/buzzer.c $(LIB_LDFLAGS)
 
-$(LIBLIGHT): code/server/lib/light.c code/server/include/light.h code/server/include/led.h code/server/include/device_log.h | $(EXEC_LIB_DIR)
+$(LIBLIGHT): code/server/lib/light.c code/server/include/light.h code/server/include/led.h | $(EXEC_LIB_DIR)
 	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBLIGHT) code/server/lib/light.c $(LIB_LDFLAGS)
 
-$(LIBFND): code/server/lib/fnd.c code/server/include/fnd.h code/server/include/device_log.h | $(EXEC_LIB_DIR)
+$(LIBFND): code/server/lib/fnd.c code/server/include/fnd.h | $(EXEC_LIB_DIR)
 	$(CC) $(CFLAGS) -fPIC -shared -o $(LIBFND) code/server/lib/fnd.c $(LIB_LDFLAGS)
 
 $(SERVER): $(SERVER_SRCS) $(LIBS) | $(EXEC_DIR)

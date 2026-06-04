@@ -38,7 +38,6 @@ typedef int (*func_int_t)(int);
     SERVER_ERR("%s: %s\n", (msg), strerror(errno))
 
 struct sensor_arg {
-    int csock;
     volatile int stop;
     func_void_t light_read_fn;
 };
@@ -255,16 +254,10 @@ static void status_set_fnd(int value)
 static void *sensor_thread_fn(void *arg)
 {
     struct sensor_arg *sa = (struct sensor_arg *)arg;
-    char buf[BUFSIZ];
 
     while (!sa->stop) {
         int value = sa->light_read_fn();
-        const char *status = (value == 0) ? "DETECTED" : "NOT DETECTED";
         status_set_light(value);
-        snprintf(buf, sizeof(buf), "Result: LIGHT %s (value=%d)\n", status, value);
-        if (write(sa->csock, buf, strlen(buf)) < 0) {
-            break;
-        }
         usleep(500000);
     }
 
@@ -531,13 +524,20 @@ int main(int argc, char **argv)
                 if (sensor_tid == 0) {
                     sensor_argp = malloc(sizeof(struct sensor_arg));
                     if (sensor_argp != NULL) {
-                        sensor_argp->csock = csock;
+                        int value = light_read();
+                        const char *light_status =
+                            (value == 0) ? "DETECTED" : "NOT DETECTED";
+                        status_set_light(value);
                         sensor_argp->stop = 0;
                         sensor_argp->light_read_fn = light_read;
                         if (pthread_create(&sensor_tid, NULL, sensor_thread_fn, sensor_argp) == 0) {
                             status_set_sensor(1);
-                            SERVER_LOG("[LIGHT] Sensor push started\n");
-                            write(csock, "Result: SENSOR ON\n", 17);
+                            SERVER_LOG("[LIGHT] Sensor monitor started\n");
+                            snprintf(mesg, sizeof(mesg),
+                                     "Result: SENSOR ON\n"
+                                     "Result: LIGHT %s (value=%d)\n",
+                                     light_status, value);
+                            write(csock, mesg, strlen(mesg));
                         } else {
                             free(sensor_argp);
                             sensor_argp = NULL;
@@ -548,19 +548,34 @@ int main(int argc, char **argv)
                         write(csock, "ERROR: failed to allocate sensor\n", 33);
                     }
                 } else {
-                    write(csock, "Result: SENSOR ALREADY ON\n", 27);
+                    int value = light_read();
+                    const char *light_status =
+                        (value == 0) ? "DETECTED" : "NOT DETECTED";
+                    status_set_light(value);
+                    snprintf(mesg, sizeof(mesg),
+                             "Result: SENSOR ALREADY ON\n"
+                             "Result: LIGHT %s (value=%d)\n",
+                             light_status, value);
+                    write(csock, mesg, strlen(mesg));
                 }
             } else if (strcmp(mesg, "sensor on") == 0) {
                 if (sensor_tid == 0) {
                     sensor_argp = malloc(sizeof(struct sensor_arg));
                     if (sensor_argp != NULL) {
-                        sensor_argp->csock = csock;
+                        int value = light_read();
+                        const char *light_status =
+                            (value == 0) ? "DETECTED" : "NOT DETECTED";
+                        status_set_light(value);
                         sensor_argp->stop = 0;
                         sensor_argp->light_read_fn = light_read;
                         if (pthread_create(&sensor_tid, NULL, sensor_thread_fn, sensor_argp) == 0) {
                             status_set_sensor(1);
-                            SERVER_LOG("[LIGHT] Sensor push started\n");
-                            write(csock, "Result: SENSOR ON\n", 17);
+                            SERVER_LOG("[LIGHT] Sensor monitor started\n");
+                            snprintf(mesg, sizeof(mesg),
+                                     "Result: SENSOR ON\n"
+                                     "Result: LIGHT %s (value=%d)\n",
+                                     light_status, value);
+                            write(csock, mesg, strlen(mesg));
                         } else {
                             free(sensor_argp);
                             sensor_argp = NULL;
@@ -571,7 +586,15 @@ int main(int argc, char **argv)
                         write(csock, "ERROR: failed to allocate sensor\n", 33);
                     }
                 } else {
-                    write(csock, "Result: SENSOR ALREADY ON\n", 27);
+                    int value = light_read();
+                    const char *light_status =
+                        (value == 0) ? "DETECTED" : "NOT DETECTED";
+                    status_set_light(value);
+                    snprintf(mesg, sizeof(mesg),
+                             "Result: SENSOR ALREADY ON\n"
+                             "Result: LIGHT %s (value=%d)\n",
+                             light_status, value);
+                    write(csock, mesg, strlen(mesg));
                 }
             } else if (strcmp(mesg, "sensor off") == 0) {
                 if (sensor_tid != 0 && sensor_argp != NULL) {
@@ -581,7 +604,7 @@ int main(int argc, char **argv)
                     sensor_tid = 0;
                     sensor_argp = NULL;
                     status_set_sensor(0);
-                    SERVER_LOG("[LIGHT] Sensor push stopped\n");
+                    SERVER_LOG("[LIGHT] Sensor monitor stopped\n");
                     write(csock, "Result: SENSOR OFF\n", 17);
                 } else {
                     status_set_sensor(0);
