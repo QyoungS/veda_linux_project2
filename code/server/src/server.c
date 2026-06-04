@@ -78,9 +78,22 @@ int main(int argc, char **argv)
 
     setvbuf(stdout, NULL, _IONBF, 0);
 
-    /* Redirect stdout/stderr to running.txt for runtime logs */
+    /* Redirect stdout/stderr to docs/running.txt for runtime logs */
     {
-        FILE *logf = fopen("running.txt", "a");
+        const char *log_paths[] = {
+            "../docs/running.txt",
+            "docs/running.txt",
+            "running.txt"
+        };
+        FILE *logf = NULL;
+
+        for (size_t i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
+            logf = fopen(log_paths[i], "a");
+            if (logf) {
+                break;
+            }
+        }
+
         if (logf) {
             /* duplicate file descriptor to stdout and stderr */
             dup2(fileno(logf), STDOUT_FILENO);
