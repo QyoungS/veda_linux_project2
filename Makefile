@@ -7,6 +7,7 @@ EXEC_DIR = exec
 EXEC_LIB_DIR = $(EXEC_DIR)/lib
 SERVER = $(EXEC_DIR)/server
 CLIENT = $(EXEC_DIR)/client
+WEB = $(EXEC_DIR)/web_status
 LIBLED = $(EXEC_LIB_DIR)/libled.so
 LIBBUZZER = $(EXEC_LIB_DIR)/libbuzzer.so
 LIBLIGHT = $(EXEC_LIB_DIR)/liblight.so
@@ -15,12 +16,19 @@ LIBS = $(LIBLED) $(LIBBUZZER) $(LIBLIGHT) $(LIBFND)
 
 SERVER_SRCS = code/server/src/server.c code/server/src/daemon.c
 CLIENT_SRCS = code/client/client.c
+WEB_SRCS = code/server/src/web_status.c
+RUNNING_LOG = docs/running.txt
 
 all: server client
 
-server: $(SERVER)
+server: reset-log $(SERVER)
 
 client: $(CLIENT)
+
+web: $(WEB)
+
+reset-log:
+	: > $(RUNNING_LOG)
 
 $(EXEC_DIR):
 	mkdir -p $(EXEC_DIR)
@@ -46,7 +54,10 @@ $(SERVER): $(SERVER_SRCS) $(LIBS) | $(EXEC_DIR)
 $(CLIENT): $(CLIENT_SRCS) | $(EXEC_DIR)
 	$(CC) $(CFLAGS) -o $(CLIENT) $(CLIENT_SRCS)
 
+$(WEB): $(WEB_SRCS) | $(EXEC_DIR)
+	$(CC) $(CFLAGS) -o $(WEB) $(WEB_SRCS)
+
 clean:
-	rm -f $(SERVER) $(CLIENT) $(LIBS)
+	rm -f $(SERVER) $(CLIENT) $(WEB) $(LIBS)
 	rmdir --ignore-fail-on-non-empty $(EXEC_LIB_DIR) 2>/dev/null || true
 	rmdir --ignore-fail-on-non-empty $(EXEC_DIR) 2>/dev/null || true

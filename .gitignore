@@ -1,5 +1,7 @@
 # Ignore runtime log
 running.txt
+docs/running.txt
+exec/status.txt
 
 # Ignore temporary Vim swap files
 *~

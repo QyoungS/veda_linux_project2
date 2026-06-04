@@ -27,6 +27,7 @@ static void write_log(const char *format, ...)
 	}
 
 	va_start(args, format);
+	fprintf(log_file, "[CLIENT] ");
 	vfprintf(log_file, format, args);
 	va_end(args);
 
@@ -339,7 +340,21 @@ int main(int argc, char **argv)
 	int sock;
 	char cmd[BUF_SIZE];
 
-	log_file = fopen("running.txt", "a");
+	{
+		const char *log_paths[] = {
+			"../docs/running.txt",
+			"docs/running.txt",
+			"running.txt"
+		};
+		size_t i;
+
+		for (i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
+			log_file = fopen(log_paths[i], "a");
+			if (log_file != NULL) {
+				break;
+			}
+		}
+	}
 	if (log_file == NULL) {
 		perror("running.txt");
 	}

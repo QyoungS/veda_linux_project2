@@ -1,4 +1,6 @@
 #include <stdio.h>
+#include <errno.h>
+#include <string.h>
 #include <fcntl.h>
 #include <signal.h>
 #include <unistd.h>
@@ -11,7 +13,7 @@ int make_daemon(void)
     /* Create a child process and terminate the parent */
     pid = fork();
     if (pid < 0) {
-        perror("fork()");
+        fprintf(stderr, "[SERVER] fork(): %s\n", strerror(errno));
         return -1;
     }
 
@@ -21,7 +23,7 @@ int make_daemon(void)
 
     /* Detach from the controlling terminal */
     if (setsid() < 0) {
-        perror("setsid()");
+        fprintf(stderr, "[SERVER] setsid(): %s\n", strerror(errno));
         return -1;
     }
 
