@@ -12,10 +12,6 @@
 #include <pthread.h>
 
 #define TCP_PORT 5100
-#define LED_LIB_PATH "./lib/libled.so"
-#define BUZZER_LIB_PATH "./lib/libbuzzer.so"
-#define LIGHT_LIB_PATH "./lib/liblight.so"
-#define FND_LIB_PATH "./lib/libfnd.so"
 
 int make_daemon(void);
 
@@ -56,6 +52,21 @@ static struct device_status g_status = {
     0, 0, 0, 0, 0, -1, -1
 };
 static pthread_mutex_t g_status_lock = PTHREAD_MUTEX_INITIALIZER;
+
+static void *dlopen_device(const char *name, const char *paths[], int flags) /* Try library paths from root or exec/. */
+{
+    void *handle = NULL;
+
+    for (size_t i = 0; paths[i] != NULL; i++) {
+        handle = dlopen(paths[i], flags);
+        if (handle != NULL) {
+            return handle;
+        }
+    }
+
+    SERVER_ERR("dlopen error for %s: %s\n", name, dlerror());
+    return NULL;
+}
 
 static FILE *open_status_file(const char *mode) /* Open status.txt from common run paths. */
 {
@@ -289,6 +300,10 @@ int main(int argc, char **argv) /* Device server entry point. */
     void *buzzer_handle;
     void *light_handle;
     void *fnd_handle;
+    const char *led_paths[] = {"./lib/libled.so", "./exec/lib/libled.so", NULL};
+    const char *buzzer_paths[] = {"./lib/libbuzzer.so", "./exec/lib/libbuzzer.so", NULL};
+    const char *light_paths[] = {"./lib/liblight.so", "./exec/lib/liblight.so", NULL};
+    const char *fnd_paths[] = {"./lib/libfnd.so", "./exec/lib/libfnd.so", NULL};
     func_void_t led_on;
     func_void_t led_off;
     func_void_t buzzer_on;
@@ -308,30 +323,26 @@ int main(int argc, char **argv) /* Device server entry point. */
     }
 
     /* Load device shared libraries at runtime */
-    led_handle = dlopen(LED_LIB_PATH, RTLD_NOW | RTLD_GLOBAL);
+    led_handle = dlopen_device("LED", led_paths, RTLD_NOW | RTLD_GLOBAL);
     if (!led_handle) {
-        SERVER_ERR("dlopen error: %s\n", dlerror());
         return -1;
     }
 
-    buzzer_handle = dlopen(BUZZER_LIB_PATH, RTLD_NOW);
+    buzzer_handle = dlopen_device("BUZZER", buzzer_paths, RTLD_NOW);
     if (!buzzer_handle) {
-        SERVER_ERR("dlopen error: %s\n", dlerror());
         dlclose(led_handle);
         return -1;
     }
 
-    light_handle = dlopen(LIGHT_LIB_PATH, RTLD_NOW);
+    light_handle = dlopen_device("LIGHT", light_paths, RTLD_NOW);
     if (!light_handle) {
-        SERVER_ERR("dlopen error: %s\n", dlerror());
         dlclose(buzzer_handle);
         dlclose(led_handle);
         return -1;
     }
 
-    fnd_handle = dlopen(FND_LIB_PATH, RTLD_NOW);
+    fnd_handle = dlopen_device("FND", fnd_paths, RTLD_NOW);
     if (!fnd_handle) {
-        SERVER_ERR("dlopen error: %s\n", dlerror());
         dlclose(light_handle);
         dlclose(buzzer_handle);
         dlclose(led_handle);

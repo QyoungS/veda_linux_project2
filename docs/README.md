@@ -69,7 +69,16 @@ make clean
 
 ### 서버 실행
 
-서버는 동적 라이브러리를 `./lib/lib*.so` 경로에서 로드하므로 반드시 `exec` 디렉터리에서 실행합니다.
+서버는 `./lib/lib*.so`와 `./exec/lib/lib*.so` 경로를 모두 확인하므로 프로젝트 루트와 `exec` 디렉터리 양쪽에서 실행할 수 있습니다.
+
+프로젝트 루트에서 실행:
+
+```bash
+cd ~/veda_linux_project2
+./exec/server -d
+```
+
+`exec` 디렉터리에서 실행:
 
 ```bash
 cd ~/veda_linux_project2/exec
@@ -191,13 +200,13 @@ UPDATED    = 2026-06-04 18:17:30
 
 | 평가 요소 | 구현 여부 | 코드 위치 |
 | --- | --- | --- |
-| LED on/off 제어 | [v] | `code/client/client.c:67`, `code/client/client.c:70`, `code/server/src/server.c:462`, `code/server/src/server.c:467`, `code/server/lib/led.c:37`, `code/server/lib/led.c:49` |
-| LED 밝기 조절 | [v] | `code/client/client.c:72`, `code/client/client.c:79`, `code/client/client.c:93`, `code/server/src/server.c:472`, `code/server/lib/led.c:61` |
-| 부저 on/off 제어 | [v] | `code/client/client.c:95`, `code/client/client.c:98`, `code/server/src/server.c:485`, `code/server/src/server.c:490`, `code/server/lib/buzzer.c:89`, `code/server/lib/buzzer.c:116` |
+| LED on/off 제어 | [v] | `code/client/client.c:67`, `code/client/client.c:70`, `code/server/src/server.c:473`, `code/server/src/server.c:478`, `code/server/lib/led.c:37`, `code/server/lib/led.c:49` |
+| LED 밝기 조절 | [v] | `code/client/client.c:72`, `code/client/client.c:79`, `code/client/client.c:93`, `code/server/src/server.c:483`, `code/server/lib/led.c:61` |
+| 부저 on/off 제어 | [v] | `code/client/client.c:95`, `code/client/client.c:98`, `code/server/src/server.c:496`, `code/server/src/server.c:501`, `code/server/lib/buzzer.c:89`, `code/server/lib/buzzer.c:116` |
 | 부저 음악 재생 thread | [v] | `code/server/lib/buzzer.c:58`, `code/server/lib/buzzer.c:64`, `code/server/lib/buzzer.c:104`, `code/server/lib/buzzer.c:111` |
-| 조도 센서 값 확인 | [v] | `code/client/client.c:101`, `code/client/client.c:201`, `code/client/client.c:207`, `code/server/src/server.c:495`, `code/server/src/server.c:499`, `code/server/lib/light.c:24` |
-| 조도 센서 값에 따른 LED 자동 제어 | [v] | `code/server/lib/light.c:30`, `code/server/lib/light.c:32`, `code/server/lib/light.c:34`, `code/server/lib/light.c:37`, `code/server/src/server.c:254`, `code/server/src/server.c:258` |
-| 7세그먼트 숫자 표시 | [v] | `code/client/client.c:107`, `code/client/client.c:116`, `code/server/src/server.c:585`, `code/server/src/server.c:587`, `code/server/lib/fnd.c:28` |
+| 조도 센서 값 확인 | [v] | `code/client/client.c:101`, `code/client/client.c:201`, `code/client/client.c:207`, `code/server/src/server.c:506`, `code/server/src/server.c:510`, `code/server/lib/light.c:24` |
+| 조도 센서 값에 따른 LED 자동 제어 | [v] | `code/server/lib/light.c:30`, `code/server/lib/light.c:32`, `code/server/lib/light.c:34`, `code/server/lib/light.c:37`, `code/server/src/server.c:265`, `code/server/src/server.c:269` |
+| 7세그먼트 숫자 표시 | [v] | `code/client/client.c:107`, `code/client/client.c:116`, `code/server/src/server.c:596`, `code/server/src/server.c:598`, `code/server/lib/fnd.c:28` |
 | 7세그먼트 countdown 및 0 도달 시 부저 | [v] | `code/client/client.c:252`, `code/client/client.c:258`, `code/client/client.c:271`, `code/client/client.c:272`, `code/client/client.c:275`, `code/client/client.c:276`, `code/client/client.c:280` |
 
 ### 구현 내용
@@ -216,14 +225,14 @@ UPDATED    = 2026-06-04 18:17:30
 
 | 평가 요소 | 구현 여부 | 코드 위치 |
 | --- | --- | --- |
-| 메인 프로세스 사용 | [v] | `code/server/src/server.c:281`, `code/client/client.c:305` |
+| 메인 프로세스 사용 | [v] | `code/server/src/server.c:292`, `code/client/client.c:305` |
 | 멀티 프로세스 사용 | [v] | `code/client/client.c:252`, `code/client/client.c:258`, `code/client/client.c:264`, `code/client/client.c:283` |
-| 스레드 사용 | [v] | `code/server/src/server.c:254`, `code/server/src/server.c:505`, `code/server/lib/buzzer.c:58`, `code/server/lib/buzzer.c:104` |
-| 데몬 프로세스 구현 | [v] | `code/server/src/server.c:302`, `code/server/src/server.c:304`, `code/server/src/daemon.c:14`, `code/server/src/daemon.c:25`, `code/server/src/daemon.c:31` |
-| TCP 서버 socket 구현 | [v] | `code/server/src/server.c:360`, `code/server/src/server.c:390`, `code/server/src/server.c:401`, `code/server/src/server.c:423`, `code/server/src/server.c:436` |
+| 스레드 사용 | [v] | `code/server/src/server.c:265`, `code/server/src/server.c:516`, `code/server/lib/buzzer.c:58`, `code/server/lib/buzzer.c:104` |
+| 데몬 프로세스 구현 | [v] | `code/server/src/server.c:317`, `code/server/src/server.c:319`, `code/server/src/daemon.c:14`, `code/server/src/daemon.c:25`, `code/server/src/daemon.c:31` |
+| TCP 서버 socket 구현 | [v] | `code/server/src/server.c:371`, `code/server/src/server.c:401`, `code/server/src/server.c:412`, `code/server/src/server.c:434`, `code/server/src/server.c:447` |
 | TCP 클라이언트 socket 구현 | [v] | `code/client/client.c:131`, `code/client/client.c:136`, `code/client/client.c:152`, `code/client/client.c:166`, `code/client/client.c:172` |
 | shared library 빌드 | [v] | `Makefile:11`, `Makefile:12`, `Makefile:13`, `Makefile:14`, `Makefile:35`, `Makefile:38`, `Makefile:41`, `Makefile:44` |
-| 동적 라이브러리 로딩 | [v] | `code/server/src/server.c:310`, `code/server/src/server.c:311`, `code/server/src/server.c:317`, `code/server/src/server.c:324`, `code/server/src/server.c:332`, `code/server/src/server.c:342`, `code/server/src/server.c:348`, `code/server/src/server.c:616` |
+| 동적 라이브러리 로딩 | [v] | `code/server/src/server.c:56`, `code/server/src/server.c:61`, `code/server/src/server.c:303`, `code/server/src/server.c:306`, `code/server/src/server.c:326`, `code/server/src/server.c:331`, `code/server/src/server.c:337`, `code/server/src/server.c:344`, `code/server/src/server.c:627` |
 | 클라이언트 시그널 처리 | [v] | `code/client/client.c:19`, `code/client/client.c:25`, `code/client/client.c:30`, `code/client/client.c:37`, `code/client/client.c:39`, `code/client/client.c:41` |
 | 빌드 자동화 | [v] | `Makefile:21`, `Makefile:23`, `Makefile:25`, `Makefile:27`, `Makefile:47`, `Makefile:50`, `Makefile:53` |
 
@@ -234,7 +243,7 @@ UPDATED    = 2026-06-04 18:17:30
 | 메뉴 기반 클라이언트 | [v] | `code/client/client.c:44`, `code/client/client.c:61`, `code/client/client.c:322` |
 | 실행 방법 및 평가 기준 문서화 | [v] | `docs/README.md`, `docs/manual.md` |
 | C 기반 웹 상태 서버 | [v] | `code/server/src/web_status.c:149`, `code/server/src/web_status.c:225`, `code/server/src/web_status.c:252`, `code/server/src/web_status.c:261`, `code/server/src/web_status.c:270` |
-| 파일 기반 상태 공유 | [v] | `code/server/src/server.c:60`, `code/server/src/server.c:148`, `code/server/src/web_status.c:11`, `code/server/src/web_status.c:29` |
+| 파일 기반 상태 공유 | [v] | `code/server/src/server.c:71`, `code/server/src/server.c:159`, `code/server/src/web_status.c:11`, `code/server/src/web_status.c:29` |
 | 웹 화면 자동 새로고침 및 접속 상태 표시 | [v] | `code/server/src/web_status.c:160`, `code/server/src/web_status.c:171`, `code/server/src/web_status.c:177`, `code/server/src/web_status.c:184` |
 
 ## 4. 사용한 기능 설명
