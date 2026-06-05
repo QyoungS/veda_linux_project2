@@ -43,18 +43,20 @@ static void setup_signal_handlers(void) /* Register client signal behavior. */
 
 static void print_menu(void) /* Show the device control menu. */
 {
-	printf("\n[ Device Control Menu ]\n");
-	printf("1. LED ON\n");
-	printf("2. LED OFF\n");
-	printf("3. Set Brightness\n");
-	printf("4. BUZZER ON (play melody)\n");
-	printf("5. BUZZER OFF (stop)\n");
-	printf("6. LIGHT SENSOR ON\n");
-	printf("7. LIGHT SENSOR OFF\n");
-	printf("8. SEGMENT DISPLAY\n");
-	printf("9. SEGMENT STOP\n");
-	printf("10. Exit\n");
-	printf("\nSelect: ");
+	printf("\n");
+	printf("+------------------------------------------------+\n");
+	printf("|            VEDA DEVICE CONTROL CLIENT          |\n");
+	printf("+------------------------------------------------+\n");
+	printf("| LED        1) ON              2) OFF           |\n");
+	printf("|            3) Brightness                       |\n");
+	printf("|                                                |\n");
+	printf("| BUZZER     4) Play Melody      5) Stop         |\n");
+	printf("| SENSOR     6) Start Monitor    7) Stop Monitor |\n");
+	printf("| FND        8) Countdown        9) Stop         |\n");
+	printf("|                                                |\n");
+	printf("| SYSTEM    10) Exit                             |\n");
+	printf("+------------------------------------------------+\n");
+	printf("Select menu > ");
 	fflush(stdout);
 }
 
