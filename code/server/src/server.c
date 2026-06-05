@@ -629,10 +629,10 @@ int main(int argc, char **argv) /* Device server entry point. */
                     sensor_argp = NULL;
                     status_set_sensor(0);
                     server_log("[LIGHT] Sensor monitor stopped\n");
-                    write(csock, "Result: SENSOR OFF\n", 17);
+                    write(csock, "Result: SENSOR OFF\n", strlen("Result: SENSOR OFF\n"));
                 } else {
                     status_set_sensor(0);
-                    write(csock, "Result: SENSOR OFF\n", 17);
+                    write(csock, "Result: SENSOR OFF\n", strlen("Result: SENSOR OFF\n"));
                 }
             } else if (strncmp(mesg, "fnd ", 4) == 0) {
                 int num = atoi(mesg + 4);
