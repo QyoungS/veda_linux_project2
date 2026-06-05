@@ -1,4 +1,4 @@
-# veda_linux_project2 사용 문서
+# VEDA_심화실습평가2 사용 문서
 
 ## 1. 빌드 방법
 

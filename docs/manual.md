@@ -1,4 +1,4 @@
-# veda_linux_project2 개발 문서
+# VEDA_심화실습평가2 개발 문서
 
 ## 1. 프로젝트 개요
 
