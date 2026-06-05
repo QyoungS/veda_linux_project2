@@ -108,3 +108,41 @@
 [SERVER] [FND] Device result: success
 [SERVER] Command received: FND 3
 [SERVER] [FND] Device result: success
+[SERVER] Server started
+[SERVER] Client connected
+[SERVER] Command received: LED ON
+[SERVER] [LED] Device result: success
+[SERVER] Command received: LED OFF
+[SERVER] [LED] Device result: success
+[SERVER] Command received: LED BRIGHT 128
+[SERVER] [LED] Device result: success
+[SERVER] Command received: BUZZER ON
+[SERVER] [BUZZER] Device result: success
+[SERVER] Command received: BUZZER OFF
+[SERVER] [BUZZER] Device result: success
+[SERVER] Command received: LIGHT READ
+[SERVER] [LIGHT] Sensor monitor started
+[SERVER] Command received: LIGHT READ
+[SERVER] Command received: SENSOR OFF
+[SERVER] [LIGHT] Sensor monitor stopped
+[SERVER] Command received: FND 9
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 8
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 7
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 6
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 5
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 4
+[SERVER] [FND] Device result: success
+[SERVER] Command received: FND 3
+[SERVER] [FND] Device result: success
+[SERVER] Command received: LED OFF
+[SERVER] [LED] Device result: success
+[SERVER] Command received: BUZZER OFF
+[SERVER] [BUZZER] Device result: success
+[SERVER] Command received: EXIT
+[SERVER] Client disconnected
+[SERVER] Client connected
