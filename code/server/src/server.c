@@ -4,6 +4,7 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <dlfcn.h>
+#include <stdarg.h>
 #include <time.h>
 #include <errno.h>
 #include <sys/stat.h>
@@ -17,21 +18,6 @@ int make_daemon(void);
 
 typedef int (*func_void_t)(void);
 typedef int (*func_int_t)(int);
-
-#define SERVER_LOG(...)        \
-    do {                       \
-        printf("[SERVER] ");   \
-        printf(__VA_ARGS__);   \
-    } while (0)
-
-#define SERVER_ERR(...)              \
-    do {                             \
-        fprintf(stderr, "[SERVER] "); \
-        fprintf(stderr, __VA_ARGS__); \
-    } while (0)
-
-#define SERVER_PERROR(msg) \
-    SERVER_ERR("%s: %s\n", (msg), strerror(errno))
 
 struct sensor_arg {
     volatile int stop;
@@ -52,6 +38,59 @@ static struct device_status g_status = {
     0, 0, 0, 0, 0, -1, -1
 };
 static pthread_mutex_t g_status_lock = PTHREAD_MUTEX_INITIALIZER;
+static FILE *g_log_file = NULL;
+
+static FILE *open_log_file(void) /* Open docs/running.txt from root or exec/. */
+{
+    const char *paths[] = {
+        "docs/running.txt",
+        "../docs/running.txt"
+    };
+
+    for (size_t i = 0; i < sizeof(paths) / sizeof(paths[0]); i++) {
+        FILE *fp = fopen(paths[i], "a");
+        if (fp != NULL) {
+            return fp;
+        }
+    }
+
+    return NULL;
+}
+
+static void server_log(const char *format, ...) /* Append one server log line. */
+{
+    va_list args;
+
+    if (g_log_file == NULL) {
+        return;
+    }
+
+    fprintf(g_log_file, "[SERVER] ");
+    va_start(args, format);
+    vfprintf(g_log_file, format, args);
+    va_end(args);
+    fflush(g_log_file);
+}
+
+static void server_error(const char *format, ...) /* Append one server error line. */
+{
+    va_list args;
+
+    if (g_log_file == NULL) {
+        return;
+    }
+
+    fprintf(g_log_file, "[SERVER] ");
+    va_start(args, format);
+    vfprintf(g_log_file, format, args);
+    va_end(args);
+    fflush(g_log_file);
+}
+
+static void server_perror(const char *msg) /* Append errno detail to the server log. */
+{
+    server_error("%s: %s\n", msg, strerror(errno));
+}
 
 static void *dlopen_device(const char *name, const char *paths[], int flags) /* Try library paths from root or exec/. */
 {
@@ -64,7 +103,7 @@ static void *dlopen_device(const char *name, const char *paths[], int flags) /* 
         }
     }
 
-    SERVER_ERR("dlopen error for %s: %s\n", name, dlerror());
+    server_error("dlopen error for %s: %s\n", name, dlerror());
     return NULL;
 }
 
@@ -164,7 +203,7 @@ static void write_status_locked(void) /* Write current device status while locke
     char updated[32];
 
     if (fp == NULL) {
-        SERVER_PERROR("fopen(status.txt)");
+        server_perror("fopen(status.txt)");
         return;
     }
 
@@ -322,6 +361,8 @@ int main(int argc, char **argv) /* Device server entry point. */
         }
     }
 
+    g_log_file = open_log_file();
+
     /* Load device shared libraries at runtime */
     led_handle = dlopen_device("LED", led_paths, RTLD_NOW | RTLD_GLOBAL);
     if (!led_handle) {
@@ -360,7 +401,7 @@ int main(int argc, char **argv) /* Device server entry point. */
 
     if (!led_on || !led_off || !led_brightness || !buzzer_on ||
         !buzzer_off || !light_read || !fnd_display) {
-        SERVER_ERR("dlsym error: %s\n", dlerror());
+        server_error("dlsym error: %s\n", dlerror());
         dlclose(fnd_handle);
         dlclose(light_handle);
         dlclose(buzzer_handle);
@@ -370,7 +411,7 @@ int main(int argc, char **argv) /* Device server entry point. */
 
     /* Create TCP server socket */
     if ((ssock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-        SERVER_PERROR("socket()");
+        server_perror("socket()");
         dlclose(fnd_handle);
         dlclose(light_handle);
         dlclose(buzzer_handle);
@@ -382,7 +423,7 @@ int main(int argc, char **argv) /* Device server entry point. */
         int optval = 1;
         if (setsockopt(ssock, SOL_SOCKET, SO_REUSEADDR,
                        &optval, sizeof(optval)) < 0) {
-            SERVER_PERROR("setsockopt()");
+            server_perror("setsockopt()");
             close(ssock);
             dlclose(fnd_handle);
             dlclose(light_handle);
@@ -399,7 +440,7 @@ int main(int argc, char **argv) /* Device server entry point. */
 
     /* Bind server socket to TCP port */
     if (bind(ssock, (struct sockaddr *)&servaddr, sizeof(servaddr)) < 0) {
-        SERVER_PERROR("bind()");
+        server_perror("bind()");
         close(ssock);
         dlclose(fnd_handle);
         dlclose(light_handle);
@@ -410,7 +451,7 @@ int main(int argc, char **argv) /* Device server entry point. */
 
     /* Wait for client connections */
     if (listen(ssock, 8) < 0) {
-        SERVER_PERROR("listen()");
+        server_perror("listen()");
         close(ssock);
         dlclose(fnd_handle);
         dlclose(light_handle);
@@ -419,7 +460,7 @@ int main(int argc, char **argv) /* Device server entry point. */
         return -1;
     }
 
-    SERVER_LOG("Server started\n");
+    server_log("Server started\n");
     fflush(stdout);
     status_load_previous();
     status_write();
@@ -433,11 +474,11 @@ int main(int argc, char **argv) /* Device server entry point. */
         /* Accept one client connection */
         csock = accept(ssock, (struct sockaddr *)&cliaddr, &clen);
         if (csock < 0) {
-            SERVER_PERROR("accept()");
+            server_perror("accept()");
             continue;
         }
 
-        SERVER_LOG("Client connected\n");
+        server_log("Client connected\n");
         status_set_client(1);
         pthread_t sensor_tid = 0;
         struct sensor_arg *sensor_argp = NULL;
@@ -457,7 +498,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                 }
                 status_set_client(0);
                 close(csock);
-                SERVER_LOG("Client disconnected\n");
+                server_log("Client disconnected\n");
                 break;
             }
 
@@ -466,19 +507,19 @@ int main(int argc, char **argv) /* Device server entry point. */
                 char log_mesg[BUFSIZ];
                 snprintf(log_mesg, sizeof(log_mesg), "%s", mesg);
                 to_uppercase(log_mesg);
-                SERVER_LOG("Command received: %s\n", log_mesg);
+                server_log("Command received: %s\n", log_mesg);
             }
 
             /* Dispatch command to device library function */
             if (strcmp(mesg, "led on") == 0) {
                 led_on();
                 status_set_led(1, 255);
-                SERVER_LOG("[LED] Device result: success\n");
+                server_log("[LED] Device result: success\n");
                 write(csock, "Result: LED ON\n", 15);
             } else if (strcmp(mesg, "led off") == 0) {
                 led_off();
                 status_set_led(0, 0);
-                SERVER_LOG("[LED] Device result: success\n");
+                server_log("[LED] Device result: success\n");
                 write(csock, "Result: LED OFF\n", 16);
             } else if (strncmp(mesg, "led bright ", 11) == 0) {
                 int value = atoi(mesg + 11);
@@ -490,18 +531,18 @@ int main(int argc, char **argv) /* Device server entry point. */
                     value = 255;
                 }
                 status_set_led(value > 0, value);
-                SERVER_LOG("[LED] Device result: success\n");
+                server_log("[LED] Device result: success\n");
                 snprintf(mesg, sizeof(mesg), "Result: LED BRIGHT %d\n", value);
                 write(csock, mesg, strlen(mesg));
             } else if (strcmp(mesg, "buzzer on") == 0) {
                 buzzer_on();
                 status_set_buzzer(1);
-                SERVER_LOG("[BUZZER] Device result: success\n");
+                server_log("[BUZZER] Device result: success\n");
                 write(csock, "Result: BUZZER ON\n", 18);
             } else if (strcmp(mesg, "buzzer off") == 0) {
                 buzzer_off();
                 status_set_buzzer(0);
-                SERVER_LOG("[BUZZER] Device result: success\n");
+                server_log("[BUZZER] Device result: success\n");
                 write(csock, "Result: BUZZER OFF\n", 19);
             } else if (strcmp(mesg, "light read") == 0) {
                 if (sensor_tid == 0) {
@@ -515,7 +556,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                         sensor_argp->light_read_fn = light_read;
                         if (pthread_create(&sensor_tid, NULL, sensor_thread_fn, sensor_argp) == 0) {
                             status_set_sensor(1);
-                            SERVER_LOG("[LIGHT] Sensor monitor started\n");
+                            server_log("[LIGHT] Sensor monitor started\n");
                             snprintf(mesg, sizeof(mesg),
                                      "Result: SENSOR ON\n"
                                      "Result: LIGHT %s (value=%d)\n",
@@ -553,7 +594,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                         sensor_argp->light_read_fn = light_read;
                         if (pthread_create(&sensor_tid, NULL, sensor_thread_fn, sensor_argp) == 0) {
                             status_set_sensor(1);
-                            SERVER_LOG("[LIGHT] Sensor monitor started\n");
+                            server_log("[LIGHT] Sensor monitor started\n");
                             snprintf(mesg, sizeof(mesg),
                                      "Result: SENSOR ON\n"
                                      "Result: LIGHT %s (value=%d)\n",
@@ -587,7 +628,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                     sensor_tid = 0;
                     sensor_argp = NULL;
                     status_set_sensor(0);
-                    SERVER_LOG("[LIGHT] Sensor monitor stopped\n");
+                    server_log("[LIGHT] Sensor monitor stopped\n");
                     write(csock, "Result: SENSOR OFF\n", 17);
                 } else {
                     status_set_sensor(0);
@@ -599,7 +640,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                 if (num >= 0 && num <= 9) {
                     status_set_fnd(num);
                 }
-                SERVER_LOG("[FND] Device result: success\n");
+                server_log("[FND] Device result: success\n");
                 snprintf(mesg, sizeof(mesg), "Result: FND %d\n", num);
                 write(csock, mesg, strlen(mesg));
             } else if (strcmp(mesg, "exit") == 0) {
@@ -615,7 +656,7 @@ int main(int argc, char **argv) /* Device server entry point. */
                 }
                 status_set_client(0);
                 close(csock);
-                SERVER_LOG("Client disconnected\n");
+                server_log("Client disconnected\n");
                 break;
             } else {
                 write(csock, "ERROR: unknown command\n", 23);

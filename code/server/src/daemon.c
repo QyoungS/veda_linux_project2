@@ -33,5 +33,27 @@ int make_daemon(void) /* Detach the server from the terminal. */
     /* Allow daemon to create files with requested permissions. */
     umask(0);
 
+    /* Detach standard input/output/error from the terminal. */
+    {
+        int fd = open("/dev/null", O_RDWR);
+
+        if (fd < 0) {
+            fprintf(stderr, "[SERVER] open(/dev/null): %s\n", strerror(errno));
+            return -1;
+        }
+
+        if (dup2(fd, STDIN_FILENO) < 0 ||
+            dup2(fd, STDOUT_FILENO) < 0 ||
+            dup2(fd, STDERR_FILENO) < 0) {
+            fprintf(stderr, "[SERVER] dup2(/dev/null): %s\n", strerror(errno));
+            close(fd);
+            return -1;
+        }
+
+        if (fd > STDERR_FILENO) {
+            close(fd);
+        }
+    }
+
     return 0;
 }
