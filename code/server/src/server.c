@@ -57,7 +57,7 @@ static struct device_status g_status = {
 };
 static pthread_mutex_t g_status_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static FILE *open_status_file(const char *mode)
+static FILE *open_status_file(const char *mode) /* Open status.txt from common run paths. */
 {
     const char *paths[] = {
         "exec/status.txt",
@@ -75,7 +75,7 @@ static FILE *open_status_file(const char *mode)
     return NULL;
 }
 
-static void read_status_value(const char *key, char *value, size_t size)
+static void read_status_value(const char *key, char *value, size_t size) /* Read one value from status.txt. */
 {
     FILE *fp = open_status_file("r");
     char line[256];
@@ -124,7 +124,7 @@ static void read_status_value(const char *key, char *value, size_t size)
     fclose(fp);
 }
 
-static const char *brightness_label(int value)
+static const char *brightness_label(int value) /* Convert PWM value to a display label. */
 {
     if (value >= 255) {
         return "MAX";
@@ -135,7 +135,7 @@ static const char *brightness_label(int value)
     return "LOW/OFF";
 }
 
-static void status_load_previous(void)
+static void status_load_previous(void) /* Restore previous FND value if available. */
 {
     char value[64];
 
@@ -145,7 +145,7 @@ static void status_load_previous(void)
     }
 }
 
-static void write_status_locked(void)
+static void write_status_locked(void) /* Write current device status while locked. */
 {
     FILE *fp = open_status_file("w");
     time_t now;
@@ -188,14 +188,14 @@ static void write_status_locked(void)
     fclose(fp);
 }
 
-static void status_write(void)
+static void status_write(void) /* Write current device status safely. */
 {
     pthread_mutex_lock(&g_status_lock);
     write_status_locked();
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_led(int is_on, int brightness)
+static void status_set_led(int is_on, int brightness) /* Update LED status and brightness. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.led_on = is_on;
@@ -204,7 +204,7 @@ static void status_set_led(int is_on, int brightness)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_client(int is_connected)
+static void status_set_client(int is_connected) /* Update client connection status. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.client_connected = is_connected;
@@ -212,7 +212,7 @@ static void status_set_client(int is_connected)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_buzzer(int is_on)
+static void status_set_buzzer(int is_on) /* Update buzzer status. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.buzzer_on = is_on;
@@ -220,7 +220,7 @@ static void status_set_buzzer(int is_on)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_sensor(int is_on)
+static void status_set_sensor(int is_on) /* Update sensor monitor status. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.sensor_on = is_on;
@@ -228,7 +228,7 @@ static void status_set_sensor(int is_on)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_light(int value)
+static void status_set_light(int value) /* Update light value and derived LED state. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.light_value = value;
@@ -243,7 +243,7 @@ static void status_set_light(int value)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void status_set_fnd(int value)
+static void status_set_fnd(int value) /* Update the last FND digit. */
 {
     pthread_mutex_lock(&g_status_lock);
     g_status.fnd_value = value;
@@ -251,7 +251,7 @@ static void status_set_fnd(int value)
     pthread_mutex_unlock(&g_status_lock);
 }
 
-static void *sensor_thread_fn(void *arg)
+static void *sensor_thread_fn(void *arg) /* Poll the light sensor in the background. */
 {
     struct sensor_arg *sa = (struct sensor_arg *)arg;
 
@@ -265,12 +265,12 @@ static void *sensor_thread_fn(void *arg)
     return NULL;
 }
 
-static void remove_newline(char *buf)
+static void remove_newline(char *buf) /* Trim CR/LF from socket input. */
 {
     buf[strcspn(buf, "\r\n")] = '\0';
 }
 
-static void to_uppercase(char *buf)
+static void to_uppercase(char *buf) /* Format command text for logs. */
 {
     while (*buf != '\0') {
         *buf = (char)toupper((unsigned char)*buf);
@@ -278,7 +278,7 @@ static void to_uppercase(char *buf)
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) /* Device server entry point. */
 {
     int ssock;
     struct sockaddr_in servaddr, cliaddr;
@@ -298,34 +298,6 @@ int main(int argc, char **argv)
     func_int_t fnd_display;
 
     setvbuf(stdout, NULL, _IONBF, 0);
-
-    /* Redirect stdout/stderr to docs/running.txt for runtime logs */
-    {
-        const char *log_paths[] = {
-            "../docs/running.txt",
-            "docs/running.txt"
-        };
-        FILE *logf = NULL;
-
-        mkdir("../docs", 0777);
-        mkdir("docs", 0777);
-        for (size_t i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
-            logf = fopen(log_paths[i], "a");
-            if (logf) {
-                break;
-            }
-        }
-
-        if (logf) {
-            /* duplicate file descriptor to stdout and stderr */
-            dup2(fileno(logf), STDOUT_FILENO);
-            dup2(fileno(logf), STDERR_FILENO);
-            /* keep unbuffered for immediate logging */
-            setvbuf(stdout, NULL, _IONBF, 0);
-        } else {
-            SERVER_PERROR("fopen(docs/running.txt)");
-        }
-    }
 
     /* Run as daemon only when -d option is given */
     if (argc >= 2 && strcmp(argv[1], "-d") == 0) {

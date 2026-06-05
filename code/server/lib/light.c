@@ -7,7 +7,7 @@
 
 static int initialized = 0;
 
-static void light_init(void)
+static void light_init(void) /* Initialize the light sensor pin once. */
 {
     if (initialized) {
         return;
@@ -21,7 +21,7 @@ static void light_init(void)
     initialized = 1;
 }
 
-int light_read(void)
+int light_read(void) /* Read light value and update LED automatically. */
 {
     int value;
 
@@ -30,10 +30,10 @@ int light_read(void)
     value = digitalRead(LIGHT_PIN);
 
     if (value == LOW) {
-        /* 빛이 감지되면 LED OFF */
+        /* Turn LED off when light is detected. */
         led_off();
     } else {
-        /* 빛이 감지되지 않으면 LED ON */
+        /* Turn LED on when light is not detected. */
         led_on();
     }
 

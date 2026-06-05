@@ -3,7 +3,7 @@
 #include <softPwm.h>
 #include "led.h"
 
-/* Change only these pin numbers */
+/* Hardware pin and PWM settings */
 #define LED_PIN      12
 #define PWM_RANGE    255
 #define LED_ACTIVE_LOW 1
@@ -11,7 +11,7 @@
 static int initialized = 0;
 static int pwm_ready = 0;
 
-static int led_pwm_value(int value)
+static int led_pwm_value(int value) /* Convert brightness for active-low wiring. */
 {
     if (LED_ACTIVE_LOW) {
         return PWM_RANGE - value;
@@ -20,7 +20,7 @@ static int led_pwm_value(int value)
     return value;
 }
 
-static void led_init(void)
+static void led_init(void) /* Initialize GPIO once. */
 {
     if (initialized) {
         return;
@@ -34,7 +34,7 @@ static void led_init(void)
     initialized = 1;
 }
 
-int led_on(void)
+int led_on(void) /* Turn the LED on. */
 {
     led_init();
 
@@ -46,7 +46,7 @@ int led_on(void)
     return 0;
 }
 
-int led_off(void)
+int led_off(void) /* Turn the LED off. */
 {
     led_init();
 
@@ -58,7 +58,7 @@ int led_off(void)
     return 0;
 }
 
-int led_brightness(int value)
+int led_brightness(int value) /* Set LED brightness from 0 to 255. */
 {
     led_init();
 

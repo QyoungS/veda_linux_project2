@@ -6,11 +6,11 @@
 #include <unistd.h>
 #include <sys/stat.h>
 
-int make_daemon(void)
+int make_daemon(void) /* Detach the server from the terminal. */
 {
     pid_t pid;
 
-    /* Create a child process and terminate the parent */
+    /* Create a child process and terminate the parent. */
     pid = fork();
     if (pid < 0) {
         fprintf(stderr, "[SERVER] fork(): %s\n", strerror(errno));
@@ -21,16 +21,16 @@ int make_daemon(void)
         return 1;
     }
 
-    /* Detach from the controlling terminal */
+    /* Detach from the controlling terminal. */
     if (setsid() < 0) {
         fprintf(stderr, "[SERVER] setsid(): %s\n", strerror(errno));
         return -1;
     }
 
-    /* Ignore hangup signal for daemon process */
+    /* Ignore hangup signal for daemon process. */
     signal(SIGHUP, SIG_IGN);
 
-    /* Allow daemon to create files with requested permissions */
+    /* Allow daemon to create files with requested permissions. */
     umask(0);
 
     return 0;

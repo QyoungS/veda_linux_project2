@@ -8,7 +8,7 @@
 #define DEFAULT_WEB_PORT 8080
 #define STATUS_BUF_SIZE 4096
 
-static FILE *open_status_file(void)
+static FILE *open_status_file(void) /* Find the status file from common run paths. */
 {
     const char *paths[] = {
         "status.txt",
@@ -26,7 +26,7 @@ static FILE *open_status_file(void)
     return NULL;
 }
 
-static void load_status(char *buf, size_t size)
+static void load_status(char *buf, size_t size) /* Load status.txt into a buffer. */
 {
     FILE *fp = open_status_file();
     size_t used = 0;
@@ -62,7 +62,7 @@ static void load_status(char *buf, size_t size)
     fclose(fp);
 }
 
-static void html_escape(const char *src, char *dst, size_t size)
+static void html_escape(const char *src, char *dst, size_t size) /* Escape text before embedding it in HTML. */
 {
     size_t used = 0;
 
@@ -95,7 +95,7 @@ static void html_escape(const char *src, char *dst, size_t size)
     dst[used] = '\0';
 }
 
-static void get_status_value(const char *status, const char *key,
+static void get_status_value(const char *status, const char *key, /* Extract one key from status text. */
                              char *value, size_t size)
 {
     const char *line = status;
@@ -146,7 +146,7 @@ static void get_status_value(const char *status, const char *key,
     }
 }
 
-static void send_status_page(int csock)
+static void send_status_page(int csock) /* Build and send the HTML dashboard. */
 {
     char status[STATUS_BUF_SIZE];
     char escaped[STATUS_BUF_SIZE * 2];
@@ -212,7 +212,7 @@ static void send_status_page(int csock)
     }
 }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) /* Web status server entry point. */
 {
     int ssock;
     int port = DEFAULT_WEB_PORT;

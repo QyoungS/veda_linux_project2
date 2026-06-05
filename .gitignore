@@ -1,7 +1,3 @@
-# Ignore runtime log
-running.txt
-docs/running.txt
-exec/status.txt
 content.md
 
 # Ignore temporary Vim swap files

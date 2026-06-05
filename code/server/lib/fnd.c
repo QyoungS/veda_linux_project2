@@ -9,7 +9,7 @@
 
 static int initialized = 0;
 
-static void fnd_init(void)
+static void fnd_init(void) /* Initialize 7-segment GPIO pins once. */
 {
     if (initialized) {
         return;
@@ -25,11 +25,11 @@ static void fnd_init(void)
     initialized = 1;
 }
 
-int fnd_display(int num)
+int fnd_display(int num) /* Display one digit from 0 to 9. */
 {
     int pins[4] = {FND_A, FND_B, FND_C, FND_D};
 
-    int number[10][4] = {
+    int number[10][4] = { /* BCD output table for digits 0-9. */
         {0, 0, 0, 0},
         {0, 0, 0, 1},
         {0, 0, 1, 0},

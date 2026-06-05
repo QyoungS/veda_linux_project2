@@ -17,19 +17,14 @@ LIBS = $(LIBLED) $(LIBBUZZER) $(LIBLIGHT) $(LIBFND)
 SERVER_SRCS = code/server/src/server.c code/server/src/daemon.c
 CLIENT_SRCS = code/client/client.c
 WEB_SRCS = code/server/src/web_status.c
-RUNNING_LOG = docs/running.txt
 
 all: server client
 
-server: reset-log $(SERVER)
+server: $(SERVER)
 
 client: $(CLIENT)
 
 web: $(WEB)
-
-reset-log:
-	mkdir -p docs
-	: > $(RUNNING_LOG)
 
 $(EXEC_DIR):
 	mkdir -p $(EXEC_DIR)

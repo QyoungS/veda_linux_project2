@@ -1,12 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <stdarg.h>
 #include <string.h>
 #include <unistd.h>
 #include <signal.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <sys/stat.h>
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
@@ -17,37 +15,19 @@
 static volatile sig_atomic_t running = 1;
 static pid_t countdown_pid = -1;
 static const char *global_server_ip = DEFAULT_SERVER_IP;
-static FILE *log_file;
 
-static void write_log(const char *format, ...)
-{
-	va_list args;
-
-	if (log_file == NULL) {
-		return;
-	}
-
-	va_start(args, format);
-	fprintf(log_file, "[CLIENT] ");
-	vfprintf(log_file, format, args);
-	va_end(args);
-
-	fprintf(log_file, "\n");
-	fflush(log_file);
-}
-
-static void sigint_handler(int signo)
+static void sigint_handler(int signo) /* Allow Ctrl+C to stop the main loop. */
 {
 	(void)signo;
 	running = 0;
 }
 
-static void ignore_handler(int signo)
+static void ignore_handler(int signo) /* Keep the client alive for non-INT signals. */
 {
 	printf("\nSignal %d ignored. Press Ctrl+C to exit.\n", signo);
 }
 
-static void setup_signal_handlers(void)
+static void setup_signal_handlers(void) /* Register client signal behavior. */
 {
 	struct sigaction sa;
 
@@ -61,7 +41,7 @@ static void setup_signal_handlers(void)
 	signal(SIGHUP, ignore_handler);
 }
 
-static void print_menu(void)
+static void print_menu(void) /* Show the device control menu. */
 {
 	printf("\n[ Device Control Menu ]\n");
 	printf("1. LED ON\n");
@@ -78,7 +58,7 @@ static void print_menu(void)
 	fflush(stdout);
 }
 
-static int make_command(int menu, char *cmd, size_t size)
+static int make_command(int menu, char *cmd, size_t size) /* Convert menu input to a server command. */
 {
 	int value;
 
@@ -148,7 +128,7 @@ static int make_command(int menu, char *cmd, size_t size)
 	return 0;
 }
 
-static int connect_server(const char *server_ip)
+static int connect_server(const char *server_ip) /* Open a TCP connection to the device server. */
 {
 	int sock;
 	struct sockaddr_in servaddr;
@@ -175,30 +155,24 @@ static int connect_server(const char *server_ip)
 		return -1;
 	}
 
-	write_log("Connected to server %s:%d", server_ip, TCP_PORT);
-
 	return sock;
 }
 
-static int send_command_result(int sock, const char *cmd, int print_result)
+static int send_command_result(int sock, const char *cmd, int print_result) /* Send one command and read its response. */
 {
 	char recvbuf[BUF_SIZE];
 	ssize_t recv_len;
 
 	if (send(sock, cmd, strlen(cmd), 0) < 0) {
 		perror("send()");
-		write_log("Failed to send command: %s", cmd);
 		return -1;
 	}
-
-	write_log("Sent command: %s", cmd);
 
 	memset(recvbuf, 0, sizeof(recvbuf));
 	recv_len = recv(sock, recvbuf, sizeof(recvbuf) - 1, 0);
 
 	if (print_result && recv_len > 0) {
 		recvbuf[recv_len] = '\0';
-		write_log("Received response: %s", recvbuf);
 		if (strcmp(cmd, "light read") == 0 ||
 		    strcmp(cmd, "sensor off") == 0) {
 			printf("[Sensor] %s", recvbuf);
@@ -214,17 +188,17 @@ static int send_command_result(int sock, const char *cmd, int print_result)
 	return 0;
 }
 
-static int send_command(int sock, const char *cmd)
+static int send_command(int sock, const char *cmd) /* Send a command and print the response. */
 {
 	return send_command_result(sock, cmd, 1);
 }
 
-static int send_command_silent(int sock, const char *cmd)
+static int send_command_silent(int sock, const char *cmd) /* Send a command without printing the response. */
 {
 	return send_command_result(sock, cmd, 0);
 }
 
-static int read_sensor_once(int sock)
+static int read_sensor_once(int sock) /* Request and print one light sensor reading. */
 {
 	char recvbuf[BUF_SIZE];
 	char *line;
@@ -232,30 +206,23 @@ static int read_sensor_once(int sock)
 
 	if (send(sock, "light read", strlen("light read"), 0) < 0) {
 		perror("send()");
-		write_log("Failed to send command: light read");
 		return -1;
 	}
-
-	write_log("Sent command: light read");
 
 	memset(recvbuf, 0, sizeof(recvbuf));
 	recv_len = recv(sock, recvbuf, sizeof(recvbuf) - 1, 0);
 
 	if (recv_len <= 0) {
-		write_log("Failed to receive sensor response");
 		return -1;
 	}
 
 	recvbuf[recv_len] = '\0';
-	write_log("Received response: %s", recvbuf);
 	line = strtok(recvbuf, "\r\n");
 	while (line != NULL) {
 		if (strncmp(line, "Result: LIGHT ", 14) == 0) {
 			printf("[Sensor] %s\n", line + 8);
-			write_log("[Sensor] %s", line + 8);
 		} else {
 			printf("[Sensor] %s\n", line);
-			write_log("[Sensor] %s", line);
 		}
 		line = strtok(NULL, "\r\n");
 	}
@@ -264,14 +231,14 @@ static int read_sensor_once(int sock)
 	return 0;
 }
 
-static void reap_countdown(void)
+static void reap_countdown(void) /* Reap a finished countdown child process. */
 {
 	if (countdown_pid > 0 && waitpid(countdown_pid, NULL, WNOHANG) == countdown_pid) {
 		countdown_pid = -1;
 	}
 }
 
-static void stop_countdown(void)
+static void stop_countdown(void) /* Stop the active countdown child process. */
 {
 	if (countdown_pid <= 0) {
 		return;
@@ -282,7 +249,7 @@ static void stop_countdown(void)
 	countdown_pid = -1;
 }
 
-static int start_countdown(int sock, int seconds)
+static int start_countdown(int sock, int seconds) /* Run the FND countdown in a child process. */
 {
 	pid_t pid;
 
@@ -320,7 +287,7 @@ static int start_countdown(int sock, int seconds)
 	return 0;
 }
 
-static void stop_all_devices(int sock)
+static void stop_all_devices(int sock) /* Turn off devices before client exit. */
 {
 	const char *commands[] = {
 		"led off",
@@ -335,32 +302,11 @@ static void stop_all_devices(int sock)
 	}
 }
 
-int main(int argc, char **argv)
+int main(int argc, char **argv) /* Client entry point. */
 {
 	int menu;
 	int sock;
 	char cmd[BUF_SIZE];
-
-	{
-		const char *log_paths[] = {
-			"../docs/running.txt",
-			"docs/running.txt"
-		};
-		size_t i;
-
-		mkdir("../docs", 0777);
-		mkdir("docs", 0777);
-		for (i = 0; i < sizeof(log_paths) / sizeof(log_paths[0]); i++) {
-			log_file = fopen(log_paths[i], "a");
-			if (log_file != NULL) {
-				break;
-			}
-		}
-	}
-	if (log_file == NULL) {
-		perror("docs/running.txt");
-	}
-	write_log("Client started");
 
 	if (argc >= 2) {
 		global_server_ip = argv[1];
@@ -381,41 +327,34 @@ int main(int argc, char **argv)
 				break;
 			}
 			printf("Invalid input\n");
-			write_log("Invalid input");
 			break;
 		}
-		write_log("Selected menu: %d", menu);
 
 		reap_countdown();
 		memset(cmd, 0, sizeof(cmd));
 
 		if (make_command(menu, cmd, sizeof(cmd)) < 0) {
 			printf("Invalid menu\n");
-			write_log("Invalid menu: %d", menu);
 			continue;
 		}
 
 		if (strncmp(cmd, "countdown ", 10) == 0) {
 			if (start_countdown(sock, atoi(cmd + 10)) < 0) {
 				printf("Failed to start countdown\n");
-				write_log("Failed to start countdown");
 			}
 			printf("Countdown started. Select 9 to stop.\n");
-			write_log("Countdown started: %s", cmd);
 			continue;
 		}
 
 		if (strcmp(cmd, "segment stop") == 0) {
 			stop_countdown();
 			printf("Segment countdown stopped\n");
-			write_log("Segment countdown stopped");
 			continue;
 		}
 
 		if (strcmp(cmd, "light read") == 0) {
 			if (read_sensor_once(sock) < 0) {
 				printf("Failed to send command\n");
-				write_log("Failed to read sensor");
 			}
 			continue;
 		}
@@ -425,14 +364,12 @@ int main(int argc, char **argv)
 			stop_all_devices(sock);
 			if (send_command(sock, cmd) < 0) {
 				printf("Failed to send command\n");
-				write_log("Failed to send command: %s", cmd);
 			}
 			break;
 		}
 
 		if (send_command(sock, cmd) < 0) {
 			printf("Failed to send command\n");
-			write_log("Failed to send command: %s", cmd);
 			break;
 		}
 	}
@@ -440,10 +377,6 @@ int main(int argc, char **argv)
 	stop_countdown();
 	close(sock);
 	printf("\nClient terminated\n");
-	write_log("Client terminated");
-	if (log_file != NULL) {
-		fclose(log_file);
-	}
 
 	return 0;
 }

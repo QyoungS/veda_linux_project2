@@ -4,7 +4,7 @@
 #include <softTone.h>
 #include "buzzer.h"
 
-/* Change only these pin numbers */
+/* Hardware pin and tone settings */
 #define BUZZER_PIN  21
 #define BUZZER_FREQ 392
 
@@ -14,7 +14,7 @@ static int playing = 0;
 static pthread_t play_thread;
 static pthread_mutex_t buzzer_lock = PTHREAD_MUTEX_INITIALIZER;
 
-static int healing_chime[] = {
+static int healing_chime[] = { /* Melody notes used by buzzer_on(). */
     523, 659, 784, 1047, 0,
     784, 1047, 1319, 1568, 0,
     1319, 1568, 1760, 1568, 1319, 1047, 0,
@@ -22,7 +22,7 @@ static int healing_chime[] = {
     1047, 1319, 1568, 2093, 0
 };
 
-static int buzzer_should_stop(void)
+static int buzzer_should_stop(void) /* Read the shared stop flag safely. */
 {
     int should_stop;
 
@@ -33,13 +33,13 @@ static int buzzer_should_stop(void)
     return should_stop;
 }
 
-static void buzzer_stop_output(void)
+static void buzzer_stop_output(void) /* Silence the buzzer output. */
 {
     softToneWrite(BUZZER_PIN, 0);
     digitalWrite(BUZZER_PIN, HIGH);
 }
 
-static void buzzer_init(void)
+static void buzzer_init(void) /* Initialize GPIO and softTone once. */
 {
     if (initialized) {
         return;
@@ -55,7 +55,7 @@ static void buzzer_init(void)
     initialized = 1;
 }
 
-static void *buzzer_play_thread(void *arg)
+static void *buzzer_play_thread(void *arg) /* Play the melody without blocking the server. */
 {
     int total = sizeof(healing_chime) / sizeof(healing_chime[0]);
 
@@ -86,7 +86,7 @@ static void *buzzer_play_thread(void *arg)
     return NULL;
 }
 
-int buzzer_on(void)
+int buzzer_on(void) /* Start melody playback. */
 {
     buzzer_init();
 
@@ -113,7 +113,7 @@ int buzzer_on(void)
     return 0;
 }
 
-int buzzer_off(void)
+int buzzer_off(void) /* Request playback stop and silence the buzzer. */
 {
     buzzer_init();
 
